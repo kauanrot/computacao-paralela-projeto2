@@ -1,0 +1,29 @@
+# binarios compilados
+*.o
+*.out
+*.exe
+# (o binario tem o mesmo nome da pasta; "pasta/pasta" ignora so o arquivo)
+**/W1_harmonic/W1_harmonic
+**/W2_sudokount/W2_sudokount
+**/W3_matmul/W3_matmul
+**/P1_pi/P1_pi
+**/P2_threshold/P2_threshold
+**/P4_histogram/P4_histogram
+**/P5_life/P5_life
+**/P6_sieve/P6_sieve
+**/P7_mergesort/P7_mergesort
+**/P8_mandelbrot/P8_mandelbrot
+**/P9_nqueens/P9_nqueens
+**/P10_floyd/P10_floyd
+**/parser/parser
+**/sequencial
+**/paralelo
+
+# entradas grandes geradas (ex.: judge.in do P5 tem ~25 MB)
+judge.in
+*.big.in
+
+# medicoes temporarias
+*.log
+__pycache__/
+.vscode/
