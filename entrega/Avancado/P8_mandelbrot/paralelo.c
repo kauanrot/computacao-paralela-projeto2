@@ -13,10 +13,11 @@
  * Estrategia:
  *  - parallel for nas linhas (y). Linha inteira por vez: granularidade boa
  *    (W pixels) e cada thread escreve um trecho contiguo de grid.
- *  - schedule(runtime) para poder comparar static/dynamic/guided sem
- *    recompilar (variavel OMP_SCHEDULE). Se OMP_SCHEDULE nao estiver
- *    definida, usa dynamic,1: as threads pegam a proxima linha livre
- *    assim que terminam a atual, o que equilibra a carga.
+ *  - schedule(runtime): o tipo de escalonamento vem da variavel de
+ *    ambiente OMP_SCHEDULE (ex.: OMP_SCHEDULE=static ./paralelo), o que
+ *    permite comparar static/dynamic/guided sem recompilar.
+ *    Se OMP_SCHEDULE nao for definida, usa dynamic,1: cada thread pega a
+ *    proxima linha livre assim que termina a atual, o que equilibra a carga.
  *  - x, y, cr, ci, zr, zi, it, t sao declarados dentro do laco: privados.
  *
  * O tempo medido e so o do calculo (omp_get_wtime, stderr); a impressao
@@ -32,6 +33,7 @@ int main(void) {
     int *grid = malloc(sizeof(int) * (long)W * H);
     if (!grid) return 1;
 
+    /* sem OMP_SCHEDULE definida: usa dynamic com pedacos de 1 linha */
     if (!getenv("OMP_SCHEDULE")) omp_set_schedule(omp_sched_dynamic, 1);
 
     double t0 = omp_get_wtime();
@@ -50,15 +52,7 @@ int main(void) {
     double t1 = omp_get_wtime();
 
     for (long i = 0; i < (long)W*H; i++) printf("%d\n", grid[i]);
-
-    omp_sched_t tipo; int chunk;
-    omp_get_schedule(&tipo, &chunk);
-    tipo = (omp_sched_t)((int)tipo & 0x7fffffff);   /* tira o bit "monotonic" */
-    const char *nome = tipo == omp_sched_static  ? "static"  :
-                       tipo == omp_sched_dynamic ? "dynamic" :
-                       tipo == omp_sched_guided  ? "guided"  : "auto";
-    fprintf(stderr, "tempo: %.6f s (threads=%d, schedule=%s,%d)\n",
-            t1 - t0, omp_get_max_threads(), nome, chunk);
+    fprintf(stderr, "tempo: %.6f s (threads=%d)\n", t1 - t0, omp_get_max_threads());
     free(grid);
     return 0;
 }

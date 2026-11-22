@@ -1,23 +1,24 @@
 /* P5 - Jogo da Vida de Conway (versao paralela com OpenMP)
  *
- * Dependencia: a geracao t+1 so le a geracao t. Dentro de uma geracao,
- * cada celula de "nxt" e escrita por uma unica iteracao e "cur" so e lido,
- * entao as celulas sao independentes. Entre geracoes ha dependencia: a
- * geracao t+1 so pode comecar quando a t terminou inteira.
+ * O codigo e igual ao sequencial; a unica mudanca e o #pragma em play().
  *
- * Estrategia:
- *  - Uma unica regiao paralela em volta de TODAS as geracoes (as threads
- *    sao criadas uma vez, nao G vezes).
- *  - Em cada geracao, "omp for" divide as colunas i entre as threads.
- *    A barreira implicita no fim do "omp for" e exatamente a dependencia
- *    entre geracoes: ninguem troca os tabuleiros antes de todos terminarem.
- *  - A troca cur/nxt e feita em variaveis locais de cada thread (todas
- *    fazem a mesma troca), entao nao precisa de "single" nem de outra
- *    barreira.
- *  - schedule(static): toda celula custa o mesmo, blocos contiguos de
- *    colunas por thread (cada thread percorre a memoria em sequencia).
- *  - Nao ha variavel compartilhada escrita por mais de uma thread: sem
- *    reduction, atomic ou critical.
+ * Por que da para paralelizar: existem dois tabuleiros. A geracao nova
+ * (nxt) e calculada lendo so a geracao atual (cur). Cada celula de nxt e
+ * escrita por uma unica iteracao e cur so e lido, entao as celulas de uma
+ * mesma geracao sao independentes e podem ser divididas entre as threads.
+ *
+ * Dependencia entre geracoes: a geracao t+1 so pode comecar quando a t
+ * terminou inteira. Quem garante isso e a barreira implicita no fim do
+ * "parallel for": play() so retorna quando todas as threads terminaram
+ * suas colunas. So depois disso os tabuleiros sao trocados (por uma
+ * thread so, no main, como no sequencial).
+ *
+ * schedule(static): toda celula custa o mesmo, entao blocos fixos de
+ * colunas por thread dividem a carga por igual.
+ * Nenhuma posicao e escrita por duas threads: sem reduction/atomic/critical.
+ * (As threads sao criadas uma vez e reaproveitadas pelo OpenMP nas
+ * geracoes seguintes, entao repetir o "parallel for" a cada geracao
+ * custa pouco.)
  *
  * A leitura tem a mesma correcao do sequencial (linha curta = celula
  * morta). O tempo medido e so o das G geracoes (stderr).
@@ -49,6 +50,18 @@ static int adjacent_to(cell_t **b, int n, int i, int j) {
     return count - b[i][j];
 }
 
+static void play(cell_t **cur, cell_t **nxt, int n) {
+    #pragma omp parallel for schedule(static)
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++) {
+            int a = adjacent_to(cur, n, i, j);
+            if (a == 2) nxt[i][j] = cur[i][j];
+            else if (a == 3) nxt[i][j] = 1;
+            else nxt[i][j] = 0;
+        }
+    /* barreira implicita: todas as threads terminaram esta geracao */
+}
+
 int main(void) {
     int n, g;
     if (scanf("%d %d", &n, &g) != 2) return 1;
@@ -58,34 +71,20 @@ int main(void) {
     while ((ch = getchar()) != '\n' && ch != EOF) {}
     for (int j = 0; j < n; j++) {
         if (!fgets(line, n + 16, stdin)) return 1;
-        size_t len = strcspn(line, "\r\n");
+        size_t len = strcspn(line, "\r\n");          /* fim real da linha */
         for (int i = 0; i < n; i++)
             cur[i][j] = ((size_t)i < len && line[i] == 'x');
     }
 
     double t0 = omp_get_wtime();
-    #pragma omp parallel
-    {
-        cell_t **c = cur, **p = nxt;          /* copias locais dos ponteiros */
-        for (int s = 0; s < g; s++) {
-            #pragma omp for schedule(static)
-            for (int i = 0; i < n; i++)
-                for (int j = 0; j < n; j++) {
-                    int a = adjacent_to(c, n, i, j);
-                    if (a == 2) p[i][j] = c[i][j];
-                    else if (a == 3) p[i][j] = 1;
-                    else p[i][j] = 0;
-                }
-            /* barreira implicita aqui: a geracao s terminou inteira */
-            cell_t **t = p; p = c; c = t;
-        }
+    for (int s = 0; s < g; s++) {
+        play(cur, nxt, n);
+        cell_t **t = nxt; nxt = cur; cur = t;
     }
     double t1 = omp_get_wtime();
 
-    /* apos G trocas, o tabuleiro final e cur se G for par, nxt se impar */
-    cell_t **fim = (g % 2 == 0) ? cur : nxt;
     for (int j = 0; j < n; j++) {
-        for (int i = 0; i < n; i++) putchar(fim[i][j] ? 'x' : ' ');
+        for (int i = 0; i < n; i++) putchar(cur[i][j] ? 'x' : ' ');
         putchar('\n');
     }
     fprintf(stderr, "tempo: %.6f s (threads=%d)\n", t1 - t0, omp_get_max_threads());
