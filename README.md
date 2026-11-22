@@ -30,6 +30,9 @@ Cada pasta de problema escolhido deve ter: `sequencial.c`, `paralelo.c`, `Makefi
 - CPU: Ryzen 5 5600X (6 núcleos físicos / 12 lógicos) — P=6 sem hyperthreading.
 - Compilar: `gcc -O3 -march=native -fopenmp prog.c -o prog`.
 - Caderno recomenda Linux nativo; se usar WSL2, declarar no relatório.
+- **Codespace** (`.devcontainer/`): máquina de 4 vCPU com gcc + OpenMP, para demonstrar na apresentação.
+  Abrir em *Code → Codespaces → Create codespace on main*. Os 4 vCPU são threads (≈2 núcleos físicos)
+  e a VM é compartilhada, então os tempos do relatório saem do 5600X, não do Codespace.
 
 ## Pontos encontrados nos códigos base
 

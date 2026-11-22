@@ -1,0 +1,19 @@
+{
+  "name": "Projeto 2 - OpenMP",
+  "image": "mcr.microsoft.com/devcontainers/base:1-ubuntu-24.04",
+
+  // maquina de 4 nucleos (standardLinux32gb: 4 vCPU, 16 GB)
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb"
+  },
+
+  // gcc + make (o libgomp do OpenMP vem junto com o gcc)
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential && gcc --version | head -1 && echo \"nucleos: $(nproc)\"",
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools"]
+    }
+  }
+}
