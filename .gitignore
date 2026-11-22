@@ -27,3 +27,8 @@ judge.in
 *.log
 __pycache__/
 .vscode/
+
+# saidas e entradas de teste dos problemas
+saida.txt
+medio.in
+pequeno.in

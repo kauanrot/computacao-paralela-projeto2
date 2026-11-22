@@ -42,13 +42,16 @@ Cada pasta de problema escolhido deve ter: `sequencial.c`, `paralelo.c`, `Makefi
 3. W1: `sum.expected` = `7.4854708606`, PDF diz `...605` (o código arredonda; o arquivo está certo).
 4. P10 Floyd: `dik + dkj` pode estourar `int` (V=2000, pesos até 1e6) — somar em `long long`.
 5. P5 Life: se uma linha vier mais curta que N, o `fgets` deixa lixo da linha anterior no buffer.
-6. P6 Crivo: laço externo vai até N (bastaria √N); `long` é 32 bits no Windows.
+6. P6 Crivo: o laço externo precisa ir até N (é nele que se conta os primos); só a marcação dos múltiplos
+   para depois de √N. Com `long` de 32 bits (Windows), `i * i` estoura e o `j > 0` depende de comportamento indefinido.
 7. P2, P4, P7, P8: I/O (`scanf`/`printf`) domina o tempo e é serial — medir só o kernel com `omp_get_wtime()`.
    P4 precisa armazenar os pixels (ex.: `unsigned char`, ~1 GB para M=1e9) para paralelizar.
 8. W1: a soma é em inteiros, então a ordem não muda o resultado (truncagem por termo independe da ordem).
 
 ## Problemas escolhidos
 
-- Iniciante: _a definir_
-- Intermediário: _a definir_
-- Avançado: _a definir_
+- Iniciante: **P1 — π** (`entrega/Iniciante/P1_pi/`)
+- Intermediário: **P5 — Jogo da Vida** (`entrega/Intermediario/P5_life/`)
+- Avançado: **P8 — Mandelbrot** (`entrega/Avancado/P8_mandelbrot/`)
+
+Cada pasta tem `NOTAS.md` (rascunho do capítulo do relatório) e `medir.sh` (protocolo de medição).
