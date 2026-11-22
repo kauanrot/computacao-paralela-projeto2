@@ -21,7 +21,7 @@ export OMP_PROC_BIND=close   # prende as threads nos nucleos (medicao mais estav
 export OMP_PLACES=cores
 
 make -s
-make -s "$ENTRADA" 2>/dev/null || true      # gera entrada.in se houver regra
+[ -f "$ENTRADA" ] || make -s "$ENTRADA" >/dev/null 2>&1 || true   # gera a entrada se houver regra
 [ -f "$ENTRADA" ] || { echo "ERRO: entrada '$ENTRADA' nao existe" >&2; exit 1; }
 
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
