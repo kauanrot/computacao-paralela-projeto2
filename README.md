@@ -14,7 +14,6 @@ Todos os testes e medições rodam no **GitHub Codespaces**, para que todo o gru
 
 ```
 .devcontainer/          configuracao do Codespace (gcc, OpenMP, python3, matplotlib)
-rapido.sh               roda o teste rapido dos tres problemas
 entrega/
   Iniciante/P1_pi/          sequencial.c  paralelo.c  Makefile  entrada.in  medir.sh
   Intermediario/P5_life/    sequencial.c  paralelo.c  Makefile  entrada.in  medir.sh  gen_life.py
@@ -31,9 +30,9 @@ Em cada pasta de problema:
 |---|---|
 | `sequencial.c` | código base do caderno + medição de tempo (no P5, também a correção da leitura) |
 | `paralelo.c` | versão OpenMP; os comentários no topo explicam a estratégia |
-| `Makefile` | `make` compila; `make rapido` testa rápido; `make medir` faz a medição do relatório |
+| `Makefile` | `make` compila o `sequencial` e o `paralelo` |
 | `entrada.in` | entrada de referência do caderno |
-| `medir.sh` | protocolo do caderno: aquecimento + mediana de 5, P = 1, 2, 4, 6, confere a corretude e gera `resultados.csv` |
+| `medir.sh` | medição: aquecimento + mediana de 5, P = 1, 2, 4, 6, confere a corretude e gera `resultados.csv` |
 
 ---
 
@@ -58,21 +57,9 @@ cd /workspaces/computacao-paralela-projeto2 && git pull
 > Se o Codespace foi criado antes de o `.devcontainer` incluir o python3, instale na mão:
 > `sudo apt-get update && sudo apt-get install -y python3 python3-matplotlib`
 
-## 2. Teste rápido de tudo (1 comando)
-
-Na raiz do repositório:
-
-```bash
-./rapido.sh
-```
-
-Compila os três problemas, gera entradas pequenas, confere se o paralelo dá a mesma saída do sequencial e mostra a tabela T, S, E de cada um. Leva poucos minutos.
-
-O mesmo, um problema por vez, dentro da pasta dele: `make rapido`.
-
 ---
 
-## 3. P1 — Cálculo de π, passo a passo
+## 2. P1 — Cálculo de π, passo a passo
 
 ```bash
 cd /workspaces/computacao-paralela-projeto2/entrega/Iniciante/P1_pi
@@ -98,13 +85,13 @@ OMP_NUM_THREADS=4 ./paralelo < entrada.in
 
 O resultado muda no último dígito em relação ao sequencial. Isso é esperado: com várias threads a soma é feita em outra ordem, e a diferença (~10⁻¹⁴) fica muito abaixo da tolerância do caderno (10⁻⁹).
 
-**Medição completa** (confere a corretude com tolerância 10⁻⁹ e gera `resultados.csv`):
+**Medição completa** (P = 1, 2, 4, 6; confere a corretude com tolerância 10⁻⁹ e gera `resultados.csv`):
 
 ```bash
-make medir
+./medir.sh
 ```
 
-## 4. P5 — Jogo da Vida, passo a passo
+## 3. P5 — Jogo da Vida, passo a passo
 
 ```bash
 cd /workspaces/computacao-paralela-projeto2/entrega/Intermediario/P5_life
@@ -148,13 +135,13 @@ OMP_NUM_THREADS=4 ./paralelo < pequeno.in > saida_par.txt
 cmp saida_seq.txt saida_par.txt && echo IGUAIS
 ```
 
-**Medição completa** na entrada de referência (5000 × 5000, 500 gerações; leva cerca de 1 hora no Codespace):
+**Medição completa** na entrada de referência (5000 × 5000, 500 gerações; P = 1, 2, 4, 6; confere se a saída é idêntica e gera `resultados.csv`):
 
 ```bash
-make medir
+./medir.sh
 ```
 
-## 5. P8 — Mandelbrot, passo a passo
+## 4. P8 — Mandelbrot, passo a passo
 
 ```bash
 cd /workspaces/computacao-paralela-projeto2/entrega/Avancado/P8_mandelbrot
@@ -206,39 +193,44 @@ OMP_SCHEDULE=dynamic,1 OMP_NUM_THREADS=4 ./paralelo < pequeno.in > /dev/null
 
 O `dynamic` é bem mais rápido: as linhas do meio da imagem custam muito mais que as das bordas, e com `static` a thread que pega o meio trabalha sozinha no fim.
 
-**Medição completa** (P = 1, 2, 4, 6 e comparação de schedules, na `medicao.in` = 4000 × 4000, Imax 4000):
+**Medição completa** na `medicao.in` (4000 × 4000, Imax 4000; P = 1, 2, 4, 6; gera `resultados.csv`):
 
 ```bash
-make medir
+./medir.sh medicao.in
 ```
 
-A `entrada.in` (10⁴ × 10⁴, Imax 10⁴) é a de referência do caderno, mas o protocolo completo nela levaria horas no Codespace; por isso a medição usa a `medicao.in`, e isso está declarado no relatório.
+**Comparação dos schedules** (static, dynamic, guided com P = 4; gera `schedules.csv`):
+
+```bash
+./comparar_schedule.sh medicao.in
+```
+
+A `entrada.in` (10⁴ × 10⁴, Imax 10⁴) é a de referência do caderno, mas é bem mais pesada; por isso a medição usa a `medicao.in`, e isso está declarado no relatório.
 
 ---
 
-## 6. Medição para o relatório
+## 5. Medição para o relatório
 
-1. **Aumente o tempo de inatividade do Codespace** antes das medições longas: em github.com/settings/codespaces, *Default idle timeout* = 240 minutos. Com o padrão de 30 minutos, o Codespace pode desligar no meio do P5.
-2. Rode `make medir` em cada pasta (seções 3, 4 e 5). Cada uma gera um `resultados.csv` (e o P8 também `schedules.csv`).
-3. Anote o ambiente para a tabela do relatório:
+1. Rode a medição completa de cada problema (seções 2, 3 e 4). Cada uma gera um `resultados.csv` (e o P8 também `schedules.csv`).
+2. Anote o ambiente para a tabela do relatório:
 
 ```bash
 lscpu | grep -E 'Model name|Core|Thread|Socket|L3'; gcc --version | head -1
 ```
 
-4. Gere os gráficos e as tabelas (saem em `entrega/relatorio/graficos/`):
+3. Gere os gráficos e as tabelas (saem em `entrega/relatorio/graficos/`):
 
 ```bash
 cd /workspaces/computacao-paralela-projeto2 && python3 entrega/relatorio/graficos.py
 ```
 
-5. Commite os resultados, para o grupo todo ter os números:
+4. Commite os resultados, para o grupo todo ter os números:
 
 ```bash
 git add entrega/*/*/resultados.csv entrega/Avancado/P8_mandelbrot/schedules.csv && git commit -m "Resultados das medicoes" && git push
 ```
 
-## 7. Relatório
+## 6. Relatório
 
 `entrega/relatorio/relatorio.docx` segue o template do Apêndice C (um capítulo por problema: contexto, estratégia, tabela, gráficos, análise, contribuição). O texto está escrito; **o que está destacado em amarelo falta preencher**:
 
@@ -251,7 +243,7 @@ git add entrega/*/*/resultados.csv entrega/Avancado/P8_mandelbrot/schedules.csv 
 
 Depois: atualizar o sumário (botão direito → *Atualizar campo*) e exportar para PDF (*Arquivo → Salvar como → PDF*).
 
-## 8. Conferir os códigos originais do caderno
+## 7. Conferir os códigos originais do caderno
 
 Roda os códigos base originais de P1, P5 e P8 contra as saídas esperadas do caderno:
 

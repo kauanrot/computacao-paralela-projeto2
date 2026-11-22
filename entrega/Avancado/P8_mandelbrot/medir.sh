@@ -10,20 +10,13 @@
 #
 # Uso: ./medir.sh                   (entrada.in)
 #      ./medir.sh outra.in
-#      THREADS="1 2" REPS=3 ./medir.sh pequeno.in
-#  Sem THREADS, usa 1 2 4 6 ate o numero de nucleos da maquina.
+#      THREADS="1 2 4" REPS=3 ./medir.sh pequeno.in   (ex.: Codespace de 4 vCPU)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 ENTRADA="${1:-entrada.in}"
 REPS="${REPS:-5}"
-THREADS_PADRAO="1 2 4 6"
-if [ -z "${THREADS:-}" ]; then
-    # usa so os P que a maquina tem (ex.: Codespace de 4 vCPU -> 1 2 4)
-    NUCLEOS=$(nproc 2>/dev/null || echo 64)
-    THREADS=""; for P in $THREADS_PADRAO; do [ "$P" -le "$NUCLEOS" ] && THREADS="$THREADS $P"; done
-    THREADS="${THREADS# }"
-fi
+THREADS="${THREADS:-1 2 4 6}"
 export OMP_PROC_BIND=close   # prende as threads nos nucleos (medicao mais estavel)
 export OMP_PLACES=cores
 
